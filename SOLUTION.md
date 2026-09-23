@@ -5,9 +5,10 @@
 `e2e/*.spec.ts` — the specs (auth, clients, permissions, race-condition,
 tasks, time-entries, plus the original smoke test). `pages/` — one class per
 screen, locators and actions only. `utils/` — `loginAs()`, network mocks,
-a delete-on-teardown fixture. `fixtures/test-data/` — plain values
-(credentials, fake org numbers, task titles). `BUGS.md` — 9 bugs found
-while reading the app.
+a delete-on-teardown fixture. `fixtures/test-data/` — plain values (fake
+org numbers, task titles); login credentials specifically come from `.env`
+(copy `.env.example`), not hardcoded, even though these particular ones
+aren't secrets. `BUGS.md` — 9 bugs found while reading the app.
 
 ## Locator strategy
 

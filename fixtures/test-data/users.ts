@@ -1,6 +1,21 @@
-// Seeded login test data. Matches the demo accounts documented in the
-// repo's own README ("Seeded logins") — they're intentionally public,
-// since this app has no backend and no real secrets to protect.
+// Seeded login credentials, read from .env — never hardcoded in source.
+// One-time setup: cp .env.example .env
+//
+// (.env.example's values match the seeded demo accounts documented in the
+// README's "Seeded logins" table.)
+try {
+  process.loadEnvFile('.env');
+} catch {
+  // No .env file — required() below throws with a clear, actionable message.
+}
+
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing ${name} — copy .env.example to .env before running the e2e suite.`);
+  }
+  return value;
+}
 
 export interface SeededUser {
   email: string;
@@ -8,8 +23,14 @@ export interface SeededUser {
 }
 
 export const SEEDED_USERS: Record<'admin' | 'accountant', SeededUser> = {
-  admin: { email: 'admin@qa.test', password: 'admin123' },
-  accountant: { email: 'accountant@qa.test', password: 'acct123' },
+  admin: {
+    email: required('QA_ADMIN_EMAIL'),
+    password: required('QA_ADMIN_PASSWORD'),
+  },
+  accountant: {
+    email: required('QA_ACCOUNTANT_EMAIL'),
+    password: required('QA_ACCOUNTANT_PASSWORD'),
+  },
 };
 
 export type SeededRole = keyof typeof SEEDED_USERS;
