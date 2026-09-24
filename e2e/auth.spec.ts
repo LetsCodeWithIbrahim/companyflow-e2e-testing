@@ -7,7 +7,7 @@ import { Navbar } from '../pages/navbar.page';
 
 // Required test 1: authentication — log in as both roles, and log out.
 
-test.describe('authentication', () => {
+test.describe('authentication', { tag: '@smoke' }, () => {
   test('admin can log in and log out', async ({ page }) => {
     await loginAs(page, 'admin');
     const navbar = new Navbar(page);
