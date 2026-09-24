@@ -39,11 +39,11 @@ test('a slower, earlier lookup silently overwrites a faster, later one', async (
   // re-checking it.
   await clientForm.lookupOrgNumber(fast.orgNumber);
 
-  // Give both mocked responses time to resolve (fast at ~50ms, slow at ~600ms).
-  await page.waitForTimeout(800);
-
   // Expected (correct) behavior would be the fast company's name, since that
   // was the last lookup the user actually asked for. The current app shows
   // the slow, earlier one instead — this assertion documents that known bug.
+  // No fixed wait needed: toHaveValue() polls until the slow response lands
+  // (~600ms) or the assertion times out, so this settles as soon as the
+  // state actually does rather than waiting out a hardcoded duration.
   await expect(clientForm.nameInput).toHaveValue(slow.name);
 });

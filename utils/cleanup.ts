@@ -19,8 +19,24 @@ export const test = base.extend<{ createdClients: string[] }>({
   createdClients: async ({ page }, use) => {
     const names: string[] = [];
     await use(names);
+
+    // Attempt every deletion independently — one failed cleanup shouldn't
+    // stop the rest from being attempted, and the error should say exactly
+    // which client(s) were left behind.
+    const failures: { name: string; error: unknown }[] = [];
     for (const name of names) {
-      await deleteClientByName(page, name);
+      try {
+        await deleteClientByName(page, name);
+      } catch (error) {
+        failures.push({ name, error });
+      }
+    }
+
+    if (failures.length > 0) {
+      throw new Error(
+        `Cleanup failed for ${failures.length}/${names.length} client(s): ` +
+          failures.map((f) => f.name).join(', '),
+      );
     }
   },
 });
@@ -28,23 +44,27 @@ export const test = base.extend<{ createdClients: string[] }>({
 export { expect } from '@playwright/test';
 
 async function deleteClientByName(page: Page, name: string): Promise<void> {
-  const navbar = new Navbar(page);
-  const clientList = new ClientListPage(page);
-  const confirmDialog = new ConfirmDialog(page);
+  try {
+    const navbar = new Navbar(page);
+    const clientList = new ClientListPage(page);
+    const confirmDialog = new ConfirmDialog(page);
 
-  await navbar.goToClients();
-  await clientList.search(name);
+    await navbar.goToClients();
+    await clientList.search(name);
 
-  const row = clientList.row(name);
-  if ((await row.count()) === 0) {
-    return; // already gone (e.g. the test itself deleted it) — nothing to do
+    const row = clientList.row(name);
+    if ((await row.count()) === 0) {
+      return; // already gone (e.g. the test itself deleted it) — nothing to do
+    }
+
+    await clientList.openRowActions(name);
+    await clientList.clickDeleteInRowMenu();
+    await confirmDialog.confirm();
+
+    // Confirm the delete actually took — if it silently failed, better this
+    // cleanup step fails loudly than leave stale data behind unnoticed.
+    await expect(row).toHaveCount(0);
+  } catch (error) {
+    throw new Error(`Failed to delete client "${name}" during cleanup`, { cause: error });
   }
-
-  await clientList.openRowActions(name);
-  await clientList.clickDeleteInRowMenu();
-  await confirmDialog.confirm();
-
-  // Confirm the delete actually took — if it silently failed, better this
-  // cleanup step fails loudly than leave stale data behind unnoticed.
-  await expect(row).toHaveCount(0);
 }
